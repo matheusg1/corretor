@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="pag.css">
+	<link rel="stylesheet" href="jquery.highlight-within-textarea.css">
+	</link>
+	<link rel="stylesheet" href="jquery-ui.css">
+	</link>
+	<link rel="stylesheet" href="bootstrap.css">
+	</link>
+	<title>Document</title>
+</head>
+
+<body>
+	<div class="wrapper">
+		<h1>Highlight Within Textarea v2</h1>
+		<p>Highlight <input type="text" id="blue-word" value="agui"> in blue and <input type="text" id="pink-word"
+				value="nobo"> in pink.</p>
+		<textarea spellcheck="false">vou fazer um teste agui de nobo</textarea>
+	</div>
+	<script src="jquery.min.js"></script>
+	<script src="jquery-ui.js"></script>
+	<script src="jquery.highlight-within-textarea.js"></script>
+	<script src="bootstrap.js"></script>
+	<script>
+
+		async function retornaExemplo() {
+
+			try {
+				let response = await fetch('exemplo.json');
+				let data = await response.json();
+				console.log('exemplo json');
+
+				let arrayMensagens = [];
+				let erros = data.matches;
+
+				erros.forEach(x => {
+					let mensagem = {
+						mensagem: x.message,
+						indexInicio: x.offset,
+						indexFim: x.offset + x.length,
+						sugestoes: x.replacements
+					};
+					arrayMensagens.push(mensagem);
+				});
+				return arrayMensagens;
+			} catch (error) {
+				console.error('Erro ao carregar o arquivo JSON:', error);
+			}
+		}
+
+		function highlightBlue() {
+			return $('#blue-word').val();
+		}
+
+		function highlightPink() {
+			return $('#pink-word').val();
+		}
+
+		// function updateHighlights() {
+		// 	$('textarea').highlightWithinTextarea('update');
+		// }
+		aplicarDestaque()
+
+		async function aplicarDestaque() {
+
+			let teste = await retornaExemplo();
+			console.log(teste)
+
+			let highlightConfig = [];
+
+			for (let i = 0; i < teste.length; i++) {
+				highlightConfig.push({
+					highlight: [teste[i].indexInicio, teste[i].indexFim],
+					className: 'red'
+				});
+			}
+
+
+			$('textarea').highlightWithinTextarea({
+				highlight: highlightConfig
+			});
+		}
+
+		//aplicarDestaque(highlightConfig);
+
+
+		// $('textarea').highlightWithinTextarea({
+		// 	highlight: [
+		// 		{
+		// 			highlight: [2, 5],
+		// 			className: 'blue'
+		// 		},
+		// 		{
+		// 			highlight: highlightBlue,
+		// 			className: 'blue'
+		// 		},
+		// 		{
+		// 			highlight: highlightPink,
+		// 			className: 'pink'
+		// 		}
+		// 	]
+		// });
+
+		//$('input').on('input', updateHighlights);
+
+		$(document).on('click', '.btn-sugestao', function () {
+			console.log('clicou btn sugestao');
+			console.log($(this).text());
+		});
+
+		$(document).on('click', 'mark.red', function () {
+			console.log('clicou no red');
+			console.log($(this).text());
+		});
+
+		$('textarea').click(function (e) {
+			let indiceInicial = 5;
+			let indiceFinal = 15; 
+			let texto = $(this).val();
+			let indiceClique = $(this).prop('selectionStart');
+
+			// Verifica se o clique ocorreu entre os índices especificados
+			if (indiceClique >= indiceInicial && indiceClique <= indiceFinal) {
+				console.log('Clique dentro do intervalo permitido');
+
+				// Remove qualquer tooltip existente
+				$('.tooltip-custom').remove();
+
+				let listaSugestoes = ['testesugest1', 'testesugest2', 'testesugest3'];
+				let botoesSugestao = '';
+
+				listaSugestoes.forEach(x => {
+					botoesSugestao += `<button type="button" class="btn btn-primary btn-sugestao">${x}</button>`;
+				});
+
+				// Cria o tooltip e adiciona ao body
+				var tooltip = $('<div class="tooltip-custom">' +
+					'<div class="tooltip-descricao">AVISO VARIAVEL Parece que há uma pontuação faltando. Considere aplicar a sugestão.</div>' +
+					'<div class="tooltip-sugestoes">' + botoesSugestao + '</div>' +
+					'</div>'
+				);
+				$('body').append(tooltip);
+
+				// Calcula a posição e mostra o tooltip
+				var posicaoTextArea = $(this).offset();
+				tooltip.css({
+					top: e.pageY + 10, // Posiciona abaixo do clique
+					left: e.pageX - (tooltip.width() / 2), // Centraliza horizontalmente
+					position: 'absolute',
+					display: 'block',
+					'z-index': 1000
+				});
+
+				// Torna o tooltip arrastável
+				tooltip.draggable();
+			} else {
+				$('.tooltip-custom').remove();
+			}
+		});
+
+
+		function chamadaApi(frase) {
+			$.ajax({
+				url: 'https://api.languagetoolplus.com/v2/check',
+				type: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+					'accept': 'application/json'
+				},
+				data: {
+					text: frase,
+					language: 'pt-br',
+					enabledOnly: false
+				},
+				success: function (response) {
+					console.log(response);
+					return response;
+				},
+				error: function (xhr, status, error) {
+					console.error(error);
+				}
+			});
+		}
+
+		function removerSubstring(texto, indiceInicial, indiceFinal) {
+			// Verifica se os índices são válidos
+			if (indiceInicial < 0 || indiceFinal > texto.length || indiceInicial >= indiceFinal) {
+				console.error('Índices inválidos');
+				return texto;
+			}
+			// Remove a substring do texto
+			var textoAntes = texto.substring(0, indiceInicial);
+			var textoDepois = texto.substring(indiceFinal);
+			return textoAntes + textoDepois;
+		}
+
+		function inserirPalavra(texto, palavra, indice) {
+			// Verifica se o índice é válido
+			if (indice < 0 || indice > texto.length) {
+				console.error('Índice inválido');
+				return texto;
+			}
+			// Insere a palavra no índice especificado
+			var textoAntes = texto.substring(0, indice);
+			var textoDepois = texto.substring(indice);
+			return textoAntes + palavra + textoDepois;
+		}
+
+
+		// $('textarea').click(function(e) {
+		//     var texto = $(this).val();
+		//     var indiceClique = $(this).prop('selectionStart');
+		//     var inicioPalavra = texto.lastIndexOf(' ', indiceClique) + 1;
+		//     var fimPalavra = texto.indexOf(' ', indiceClique);
+		//     fimPalavra = fimPalavra === -1 ? texto.length : fimPalavra;
+		//     var palavraClicada = texto.substring(inicioPalavra, fimPalavra);
+		//     console.log('Palavra clicada:', palavraClicada);
+		// });
+
+		let teste = ''
+
+
+	</script>
+</body>
+
+</html>
