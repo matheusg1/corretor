@@ -94,8 +94,14 @@ input {
   font-size: 10px;
 }
 
+.btn-sugestao {
+  font-size: 10px !important;
+  color: black;
+  padding: 5px;
+}
+
 
 .tooltip-sugestoes{
   display: flex;
-  gap: 15px;
+  gap: 5px;
 }

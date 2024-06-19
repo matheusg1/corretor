@@ -16,9 +16,6 @@
 
 <body>
 	<div class="wrapper">
-		<h1>Highlight Within Textarea v2</h1>
-		<p>Highlight <input type="text" id="blue-word" value="agui"> in blue and <input type="text" id="pink-word"
-				value="nobo"> in pink.</p>
 		<textarea spellcheck="false">vou fazer um teste agui de nobo</textarea>
 	</div>
 	<script src="jquery.min.js"></script>
@@ -26,6 +23,8 @@
 	<script src="jquery.highlight-within-textarea.js"></script>
 	<script src="bootstrap.js"></script>
 	<script>
+
+		let palavrasSafe = [];
 
 		async function retornaExemplo() {
 
@@ -46,6 +45,7 @@
 					};
 					arrayMensagens.push(mensagem);
 				});
+				palavrasSafe = arrayMensagens
 				return arrayMensagens;
 			} catch (error) {
 				console.error('Erro ao carregar o arquivo JSON:', error);
@@ -118,48 +118,55 @@
 		});
 
 		$('textarea').click(function (e) {
-			let indiceInicial = 5;
-			let indiceFinal = 15; 
-			let texto = $(this).val();
-			let indiceClique = $(this).prop('selectionStart');
+		
+			palavrasSafe.forEach(x => {
+				let indiceInicial = x.indexInicio;
+				let indiceFinal = x.indexFim;
+				console.log('indiceInicio ' + indiceInicial + ' indiceFinal ' + indiceFinal)
+				let texto = $(this).val();
+				let indiceClique = $(this).prop('selectionStart');
 
-			// Verifica se o clique ocorreu entre os índices especificados
-			if (indiceClique >= indiceInicial && indiceClique <= indiceFinal) {
-				console.log('Clique dentro do intervalo permitido');
+				// Verifica se o clique ocorreu entre os índices especificados
+				if (indiceClique >= indiceInicial && indiceClique <= indiceFinal) {
+					console.log('Clique dentro do intervalo permitido');
 
-				// Remove qualquer tooltip existente
-				$('.tooltip-custom').remove();
+					// Remove qualquer tooltip existente
+					$('.tooltip-custom').remove();
 
-				let listaSugestoes = ['testesugest1', 'testesugest2', 'testesugest3'];
-				let botoesSugestao = '';
+					let quantidadeSugestoes = 10;
+					let listaSugestoes = Object.keys(x.sugestoes.slice(0, quantidadeSugestoes)).map(key => x.sugestoes[key].value);
+					
+					let botoesSugestao = '';
 
-				listaSugestoes.forEach(x => {
-					botoesSugestao += `<button type="button" class="btn btn-primary btn-sugestao">${x}</button>`;
-				});
+					listaSugestoes.forEach(y => {
+						console.log(y)
+						botoesSugestao += `<button type="button" class="btn-sugestao">${y}</button>`;
+					});
 
-				// Cria o tooltip e adiciona ao body
-				var tooltip = $('<div class="tooltip-custom">' +
-					'<div class="tooltip-descricao">AVISO VARIAVEL Parece que há uma pontuação faltando. Considere aplicar a sugestão.</div>' +
-					'<div class="tooltip-sugestoes">' + botoesSugestao + '</div>' +
-					'</div>'
-				);
-				$('body').append(tooltip);
+					// Cria o tooltip e adiciona ao body
+					var tooltip = $('<div class="tooltip-custom">' +
+						`<div class="tooltip-descricao">${x.mensagem}.</div>` +
+						'<div class="tooltip-sugestoes">' + botoesSugestao + '</div>' +
+						'</div>'
+					);
+					$('body').append(tooltip);
 
-				// Calcula a posição e mostra o tooltip
-				var posicaoTextArea = $(this).offset();
-				tooltip.css({
-					top: e.pageY + 10, // Posiciona abaixo do clique
-					left: e.pageX - (tooltip.width() / 2), // Centraliza horizontalmente
-					position: 'absolute',
-					display: 'block',
-					'z-index': 1000
-				});
+					// Calcula a posição e mostra o tooltip
+					var posicaoTextArea = $(this).offset();
+					tooltip.css({
+						top: e.pageY + 10, // Posiciona abaixo do clique
+						left: e.pageX - (tooltip.width() / 2), // Centraliza horizontalmente
+						position: 'absolute',
+						display: 'block',
+						'z-index': 1000
+					});
 
-				// Torna o tooltip arrastável
-				tooltip.draggable();
-			} else {
-				$('.tooltip-custom').remove();
-			}
+					// Torna o tooltip arrastável
+					tooltip.draggable();
+				} else {
+					//$('.tooltip-custom').remove();
+				}
+			})
 		});
 
 
