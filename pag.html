@@ -16,7 +16,8 @@
 
 <body>
 	<div class="wrapper">
-		<textarea spellcheck="false">vou fazer um teste agui de nobo</textarea>
+		<!-- <textarea spellcheck="false">vou fazer um teste agui de nobo</textarea> -->
+		<textarea spellcheck="false"></textarea>
 	</div>
 	<script src="jquery.min.js"></script>
 	<script src="jquery-ui.js"></script>
@@ -25,11 +26,29 @@
 	<script>
 
 		let palavrasSafe = [];
-		let palavraClicada = []
+		let palavraClicada = [];
+
+		let highlightConfig = [];
+
+		$('textarea').highlightWithinTextarea({
+			highlight: highlightConfig
+		});
+
+
+		$('textarea').on('input', function (event) {
+			console.log('O usuário digitou algo!');
+
+			let tempo
+			clearTimeout(tempo);
+    		tempo = setTimeout(destacarPalavras, 2000);
+
+		});
 
 		async function consultaApiCorretor() {
 			return new Promise((resolve, reject) => {
-				let texto = $('textarea').text();
+				let texto = $('textarea').val();
+				console.log('texto')							
+				console.log(texto)
 
 				$.ajax({
 					url: 'https://api.languagetoolplus.com/v2/check',
@@ -68,37 +87,15 @@
 			});
 		}
 
-		async function consultaApiCorretor2() {
-			try {
-				let response = await fetch('exemplo.json');
-				let data = await response.json();
-
-				let arrayMensagens = [];
-				let erros = data.matches;
-
-				erros.forEach(x => {
-					let mensagem = {
-						mensagem: x.message,
-						indexInicio: x.offset,
-						indexFim: x.offset + x.length,
-						sugestoes: x.replacements
-					};
-					arrayMensagens.push(mensagem);
-				});
-				palavrasSafe = arrayMensagens
-				return arrayMensagens;
-			} catch (error) {
-				console.error('Erro ao carregar o arquivo JSON:', error);
-			}
-		}
 
 		async function destacarPalavras() {
 
 			let resultadoApi = await consultaApiCorretor();
+			console.log('resultadoApi')
+			console.log(resultadoApi)
 
 			let highlightConfig = [];
 
-			// console.log( resultadoApi.length)
 			for (let i = 0; i < resultadoApi.length; i++) {
 				highlightConfig.push({
 					highlight: [resultadoApi[i].indexInicio, resultadoApi[i].indexFim],
@@ -113,21 +110,16 @@
 
 
 		$(document).on('click', '.btn-sugestao', function () {
-			console.log('clicou btn sugestao');
 			let palavraNova = $(this).text();
-			let texto = $('textarea').text();
-			console.log(texto)
+			let texto = $('textarea').val();
 			let indiceInicio = palavraClicada[0];
 			let indiceFim = palavraClicada[1];
-			console.log(palavraClicada)
 
 			let textoNovo = substituirPalavraPorIndice(texto, indiceInicio, indiceFim, palavraNova)
-			$('textarea').text(textoNovo)
+			$('textarea').val(textoNovo)
 			$('.tooltip-custom').remove();
 
-			console.log(palavrasSafe)
 			palavrasSafe = palavrasSafe.filter(item => item.indexInicio !== indiceInicio);
-			console.log(palavrasSafe)
 			destacarPalavras()
 
 		});
@@ -187,30 +179,6 @@
 			})
 		});
 
-
-		function chamadaApi(frase) {
-			$.ajax({
-				url: 'https://api.languagetoolplus.com/v2/check',
-				type: 'POST',
-				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-					'accept': 'application/json'
-				},
-				data: {
-					text: frase,
-					language: 'pt-br',
-					enabledOnly: false
-				},
-				success: function (response) {
-					console.log(response);
-					return response;
-				},
-				error: function (xhr, status, error) {
-					console.error(error);
-				}
-			});
-		}
-
 		function substituirPalavraPorIndice(texto, indiceInicio, indiceFim, novaPalavra) {
 
 			let parteAntes = texto.substring(0, indiceInicio);
@@ -223,7 +191,7 @@
 
 			return parteAntes + novaPalavra + parteDepois;
 		}
-		destacarPalavras()
+		
 
 	</script>
 </body>
