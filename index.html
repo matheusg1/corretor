@@ -25,22 +25,21 @@
 	<script src="bootstrap.js"></script>
 	<script>
 
-		let palavrasSafe = [];
+		let palavrasComErro = [];
 		let palavraClicada = [];
 
 		let highlightConfig = [];
+		let tooltipAtivo = false;
+		let tempo;
 
 		$('textarea').highlightWithinTextarea({
 			highlight: highlightConfig
 		});
 
-		let tempo
 		$('textarea').on('input', function (event) {
 			console.log('O usuário digitou algo!');
 			clearTimeout(tempo);
-			tempo = setTimeout(destacarPalavras, 2000);
-
-
+			tempo = setTimeout(destacarPalavras, 700);
 		});
 
 		async function consultaApiCorretor() {
@@ -73,7 +72,7 @@
 							};
 							arrayMensagens.push(mensagem);
 						});
-						palavrasSafe = arrayMensagens
+						palavrasComErro = arrayMensagens
 						resolve(arrayMensagens);
 					},
 					error: function (xhr, status, error) {
@@ -102,6 +101,9 @@
 			$('textarea').highlightWithinTextarea({
 				highlight: highlightConfig
 			});
+
+			console.log('palavrasComErro')
+			console.log(palavrasComErro)
 		}
 
 
@@ -115,58 +117,69 @@
 			$('textarea').val(textoNovo)
 			$('.tooltip-custom').remove();
 
-			palavrasSafe = palavrasSafe.filter(item => item.indexInicio !== indiceInicio);
+			palavrasComErro = palavrasComErro.filter(item => item.indexInicio !== indiceInicio);
 			destacarPalavras()
 			$(this).focus()
 		});
 
-		$('textarea').click(function (e) {
 
-			palavrasSafe.forEach(x => {
+
+		$('textarea').click(function (e) {
+			let tooltipExiste = false;
+			let indiceClique = $(this).prop('selectionStart');
+
+			palavrasComErro.forEach(x => {
 				let indiceInicial = x.indexInicio;
 				let indiceFinal = x.indexFim;
 				let texto = $(this).val();
-				let indiceClique = $(this).prop('selectionStart');
+
 
 				if (indiceClique >= indiceInicial && indiceClique <= indiceFinal) {
+					tooltipExiste = true;
 
 					// Remove qualquer tooltip existente
+					if (!tooltipAtivo) {
+						// Remove qualquer tooltip existente
+						$('.tooltip-custom').remove();
+
+
+						let quantidadeSugestoes = 10;
+						let listaSugestoes = Object.keys(x.sugestoes.slice(0, quantidadeSugestoes)).map(key => x.sugestoes[key].value);
+
+						let botoesSugestao = '';
+
+						listaSugestoes.forEach(y => {
+							botoesSugestao += `<button type="button" class="btn-sugestao">${y}</button>`;
+						});
+
+						// Cria o tooltip e adiciona ao body
+						var tooltip = $('<div class="tooltip-custom">' +
+							`<div class="tooltip-descricao">${x.mensagem}.</div>` +
+							'<div class="tooltip-sugestoes">' + botoesSugestao + '</div>' +
+							'</div>'
+						);
+						palavraClicada = [indiceInicial, indiceFinal]
+						$('body').append(tooltip);
+
+						// Calcula a posição e mostra o tooltip
+						var posicaoTextArea = $(this).offset();
+						tooltip.css({
+							top: e.pageY + 10, // Posiciona abaixo do clique
+							left: e.pageX - (tooltip.width() / 2), // Centraliza horizontalmente
+							position: 'absolute',
+							display: 'block',
+							'z-index': 1000
+						});
+
+						tooltip.draggable();
+						tooltipAtivo = true;
+						console.log('palavra com click:' + x.mensagem)
+					}
+				}				
+
+				if (!tooltipExiste && tooltipAtivo) {
 					$('.tooltip-custom').remove();
-
-					let quantidadeSugestoes = 10;
-					let listaSugestoes = Object.keys(x.sugestoes.slice(0, quantidadeSugestoes)).map(key => x.sugestoes[key].value);
-
-					let botoesSugestao = '';
-
-					listaSugestoes.forEach(y => {
-						botoesSugestao += `<button type="button" class="btn-sugestao">${y}</button>`;
-					});
-
-					// Cria o tooltip e adiciona ao body
-					var tooltip = $('<div class="tooltip-custom">' +
-						`<div class="tooltip-descricao">${x.mensagem}.</div>` +
-						'<div class="tooltip-sugestoes">' + botoesSugestao + '</div>' +
-						'</div>'
-					);
-					palavraClicada = [indiceInicial, indiceFinal]
-					$('body').append(tooltip);
-
-					// Calcula a posição e mostra o tooltip
-					var posicaoTextArea = $(this).offset();
-					tooltip.css({
-						top: e.pageY + 10, // Posiciona abaixo do clique
-						left: e.pageX - (tooltip.width() / 2), // Centraliza horizontalmente
-						position: 'absolute',
-						display: 'block',
-						'z-index': 1000
-					});
-
-					// Torna o tooltip arrastável
-					tooltip.draggable();
-				} else {
-					//palavraClicada = []
-					console.log(palavraClicada)
-					//$('.tooltip-custom').remove();
+					tooltipAtivo = false;
 				}
 			})
 		});
