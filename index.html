@@ -34,21 +34,18 @@
 			highlight: highlightConfig
 		});
 
-
+		let tempo
 		$('textarea').on('input', function (event) {
 			console.log('O usuário digitou algo!');
-
-			let tempo
 			clearTimeout(tempo);
-    		tempo = setTimeout(destacarPalavras, 2000);
+			tempo = setTimeout(destacarPalavras, 2000);
+
 
 		});
 
 		async function consultaApiCorretor() {
 			return new Promise((resolve, reject) => {
 				let texto = $('textarea').val();
-				console.log('texto')							
-				console.log(texto)
 
 				$.ajax({
 					url: 'https://api.languagetoolplus.com/v2/check',
@@ -83,16 +80,15 @@
 						console.error(error);
 						reject(error);
 					}
+
 				});
 			});
 		}
 
 
 		async function destacarPalavras() {
-
+			console.log('destacou palavras')
 			let resultadoApi = await consultaApiCorretor();
-			console.log('resultadoApi')
-			console.log(resultadoApi)
 
 			let highlightConfig = [];
 
@@ -121,7 +117,7 @@
 
 			palavrasSafe = palavrasSafe.filter(item => item.indexInicio !== indiceInicio);
 			destacarPalavras()
-
+			$(this).focus()
 		});
 
 		$('textarea').click(function (e) {
@@ -129,12 +125,10 @@
 			palavrasSafe.forEach(x => {
 				let indiceInicial = x.indexInicio;
 				let indiceFinal = x.indexFim;
-				console.log('indiceInicio ' + indiceInicial + ' indiceFinal ' + indiceFinal)
 				let texto = $(this).val();
 				let indiceClique = $(this).prop('selectionStart');
 
 				if (indiceClique >= indiceInicial && indiceClique <= indiceFinal) {
-					console.log('Clique dentro do intervalo permitido');
 
 					// Remove qualquer tooltip existente
 					$('.tooltip-custom').remove();
@@ -145,7 +139,6 @@
 					let botoesSugestao = '';
 
 					listaSugestoes.forEach(y => {
-						console.log(y)
 						botoesSugestao += `<button type="button" class="btn-sugestao">${y}</button>`;
 					});
 
@@ -156,7 +149,6 @@
 						'</div>'
 					);
 					palavraClicada = [indiceInicial, indiceFinal]
-					console.log(palavraClicada)
 					$('body').append(tooltip);
 
 					// Calcula a posição e mostra o tooltip
@@ -184,14 +176,9 @@
 			let parteAntes = texto.substring(0, indiceInicio);
 			let parteDepois = texto.substring(indiceFim);
 
-			console.log('parteAntes')
-			console.log(parteAntes)
-			console.log('parteDepois')
-			console.log(parteDepois)
-
 			return parteAntes + novaPalavra + parteDepois;
 		}
-		
+
 
 	</script>
 </body>
